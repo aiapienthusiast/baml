@@ -170,13 +170,6 @@ class TurnStream {
     // falls back to _call_started when a provider did not set it.
     _ttft_from: baml.time.Instant?,
     _capture_sse: bool,
-    // Where this stream's token usage is recorded: the span or thread that
-    // opened it, not whoever pulls it. 0 records nothing (scripted streams,
-    // relays, whose member stream records its own usage, and a stream whose
-    // usage is already recorded).
-    _usage_target: int,
-    // The model the client asked for, which prices the usage.
-    _usage_model: string?,
 
     /// A turn stream over a live SSE connection. `decode` receives the raw
     /// batch string from `sse.next()` (a JSON array of SseEvent objects; see
@@ -189,16 +182,10 @@ class TurnStream {
     /// before that event arrives, rather than reporting the truncated text as a
     /// completed turn. Leave it null (the default) only for a protocol whose
     /// sole end-of-turn signal IS the socket closing.
-    ///
-    /// `model` is the model the request names; the stream's token usage is
-    /// recorded under it, against `usage_target` (the request's span, from
-    /// `trace._usage_target_of`), else against the caller's span.
     function from_sse(
         sse: baml.http.SseStream,
         decode: (string) -> Event[] throws root.errors.InvokeError,
         require_terminal: string? = null,
-        model: string? = null,
-        usage_target: int? = null,
     ) -> TurnStream {
         TurnStream {
             _event_source: null,
@@ -224,8 +211,6 @@ class TurnStream {
             _call_started: null,
             _ttft_from: null,
             _capture_sse: false,
-            _usage_target: usage_target ?? trace._usage_target(),
-            _usage_model: model,
         }
     }
 
@@ -258,8 +243,6 @@ class TurnStream {
             _call_started: null,
             _ttft_from: null,
             _capture_sse: false,
-            _usage_target: 0,
-            _usage_model: null,
         }
     }
 
@@ -293,8 +276,6 @@ class TurnStream {
             _call_started: null,
             _ttft_from: null,
             _capture_sse: false,
-            _usage_target: 0,
-            _usage_model: null,
         }
     }
 
@@ -334,26 +315,6 @@ class TurnStream {
         self._done = true;
         if let sse: baml.http.SseStream = self._sse {
             sse.close();
-        }
-        self._record_tokens();
-    }
-
-    /// (internal) Record this turn's tokens against `_usage_target`, once, as
-    /// soon as the stream ends: whether or not anyone asks for the final turn.
-    function _record_tokens(self) -> void {
-        let target = self._usage_target;
-        if (target != 0 && (self._input_tokens != null || self._output_tokens != null)) {
-            self._usage_target = 0;
-            // Like a non-streamed turn: full-rate input, then the cache split.
-            let _ = trace._record_usage(
-                target,
-                self._usage_model,
-                self._uncached_input_tokens ?? self._input_tokens ?? 0,
-                self._output_tokens ?? 0,
-                self._cached_input_tokens,
-                self._cache_write_input_tokens,
-                self._reasoning_tokens,
-            );
         }
     }
 
@@ -540,7 +501,6 @@ class TurnStream {
         } else {
             null
         };
-        self._record_tokens();
         if let call: root.events.LLMCall = self._wire_call {
             if (call.timing.duration_ms == null) {
                 if let started: baml.time.Instant = self._call_started {
