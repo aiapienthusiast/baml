@@ -102,6 +102,8 @@ pub type ThreadName = Arc<Box<str>>;
 /// stay in `TimingRecord` so they do not pay this stride or compete for its cache.
 #[derive(Debug)]
 pub enum SpanRecord<InputCapture, ValueCapture> {
+    /// Owned metadata for a host definition registered after recording startup.
+    HostFunctionDefined(Box<btel_types::FunctionMetadata>),
     /// This ring needs its own thread context; the Timing ring's is independent.
     ThreadSelected { thread_id: TelemetryId },
     /// Execution context for subsequent observations in this chunk and thread.
@@ -1209,7 +1211,8 @@ impl<C> SpanRecord<C, C> {
             | Self::LateFunctionSpanCompletionPanickedReentry { captured_value, .. } => {
                 captured_value.take()
             }
-            Self::ThreadSelected { .. }
+            Self::HostFunctionDefined(_)
+            | Self::ThreadSelected { .. }
             | Self::ContextCleared
             | Self::ContextReferenced { .. }
             | Self::ThreadSpanAnnouncement { .. }
