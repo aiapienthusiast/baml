@@ -105,6 +105,7 @@ class ChatClient {
             api_key_env = "OPENAI_API_KEY",
             api_key_required = true,
             send_stream_options = true,
+            cache_breakpoints = true,
         )
     }
 
