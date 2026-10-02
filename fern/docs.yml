@@ -815,6 +815,9 @@ navigation:
           - page: "Cerebras (openai-generic)"
             slug: cerebras
             path: 03-reference/baml/clients/providers/cerebras.mdx
+          - page: "Cheaper Inference (openai-generic)"
+            slug: cheaper-inference
+            path: 03-reference/baml/clients/providers/cheaper-inference.mdx
           - page: "Groq (openai-generic)"
             slug: groq
             path: 03-reference/baml/clients/providers/groq.mdx
@@ -1207,6 +1210,8 @@ redirects:
     destination: "/ref/boundary-extraction-api/extract/examples"
   - source: "/ref/llm-client-providers/openai-generic-microsoft-foundry"
     destination: "/ref/llm-client-providers/microsoft-foundry"
+  - source: "/ref/llm-client-providers/openai-generic-cheaper-inference"
+    destination: "/ref/llm-client-providers/cheaper-inference"
   - source: "/ref/llm-client-providers/openai-generic-groq"
     destination: "/ref/llm-client-providers/groq"
   - source: "/ref/llm-client-providers/openai-generic-hugging-face"
